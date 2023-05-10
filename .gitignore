@@ -1,0 +1,39 @@
+.vs/*
+# Compiled object files
+*.o
+*.obj
+
+# Compiled dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Executables
+*.exe
+*.out
+
+# Build directories
+build/
+bin/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln.docstates
+
+# Dependency directories
+lib/
+libs/
+
+# Miscellaneous
+*.log
+*.tlog
+*.swp
+.DS_Store
+Thumbs.db
+
+
+*/x64/*
+*x64/*

@@ -21,27 +21,28 @@
 
 SCamera camera;
 
-#define NUM_BUFFERS 3
-#define NUM_VAOS 3
-#define NUMTEXTURES 3
+#define NUM_BUFFERS 9
+#define NUM_VAOS 9
+#define NUMTEXTURES 7
+
 GLuint Buffers[NUM_BUFFERS];
 GLuint VAOs[NUM_VAOS];
 
 int WIDTH = 1024;
 int HEIGHT = 768;
 
-#define SH_MAP_WIDTH 2048
-#define SH_MAP_HEIGHT 2048
+#define SH_MAP_WIDTH 4096
+#define SH_MAP_HEIGHT 4096
 
-#define NUM_LIGHTS 2
+#define NUM_LIGHTS 1
 
 glm::vec3 lightDirection[NUM_LIGHTS];
 glm::vec3 lightPos[NUM_LIGHTS];
 
-glm::vec3 initSunPos = glm::vec3(0.f, 0.f, 20.f);
+glm::vec3 initSunPos = glm::vec3(0.f, 0.f, 19.f);
 glm::vec3 sunRotation = glm::vec3(-2.f, 0.f, 0.f);
 
-int lightType[] = { 0 , 2 };
+int lightType[] = { 1 , 2 };
 
 #define RADIUS 1
 #define NUM_SECTORS 30
@@ -52,13 +53,24 @@ int cameraType = 0;
 
 int flashLight = 0;
 
+#define CANNONBALL_SPEED 0.6;
+
+float cannonBallPos = -1;
+
 void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
-		lightPos[1] = camera.Position;
-		lightDirection[1] = camera.Front;
+		if (cannonBallPos == -1) {
+			cannonBallPos = 0;
+		}
+		else if (cannonBallPos == 0) {
+			cannonBallPos = 0.1;
+		}
+		else {
+			cannonBallPos = -1;
+		}
 	}
 	if (key == GLFW_KEY_LEFT_ALT && action == GLFW_PRESS) {
 		lightType[0] = (lightType[0] + 1) % 3;
@@ -162,25 +174,34 @@ void SizeCallback(GLFWwindow* window, int w, int h)
 	glViewport(0, 0, w, h);
 }
 
-float* objParser(const char* filename) {
+void objParser(const char* filename, std::vector<std::vector<float>> &objects) {
 	char* obj = read_file(filename);
 	const char* delim = "\n";
-	char* saveptr;
-	char* saveptr2;
-	rsize_t strmax = sizeof obj;
+	char* saveptr, * saveptr2;
 
 	std::vector<glm::vec3> vertices;
 	std::vector<glm::vec3> normals;
 	std::vector<glm::vec2> texCoords;
-	std::vector<float> object;
 
+	std::vector<float > object;
+
+	int objNum = 0;
+	
 	char* line = strtok_s(obj, delim, &saveptr);
 	while (line != NULL)
 	{
 		char* words = strtok_s(line, " ", &saveptr2);
 		std::string word(words);
-		printf("%s\n", words);
 		if (word == "#") {
+			words = strtok_s(NULL, " ", &saveptr2);
+			std::string word(words);
+			if (word == "object") {
+				if (objNum != 0) {
+					objects.push_back(object);
+					object.clear();
+				}
+				objNum++;
+			}
 		}
 		else if (word == "v") {
 			glm::vec3 v;
@@ -211,15 +232,47 @@ float* objParser(const char* filename) {
 			texCoords.push_back(v);
 		}
 		else if (word == "f") {
+			std::vector<std::vector<float>> face;
 
+			for (int i = 0; i < 4; i++) {
+				std::vector<float> vertex;
+				char* saveptr3;
+				int index;
+				words = strtok_s(NULL, " ", &saveptr2);
+
+				index = std::atoi(strtok_s(words, "/", &saveptr3));
+				glm::vec3 v = vertices.at(index-1);
+				vertex.push_back(v.x);
+				vertex.push_back(v.y);
+				vertex.push_back(v.z);
+				
+				index = std::atoi(strtok_s(NULL, "/", &saveptr3));
+				glm::vec2 t = texCoords.at(index-1);
+				vertex.push_back(t.x);
+				vertex.push_back(t.y);
+				
+				index = std::atoi(strtok_s(NULL, "/", &saveptr3));
+				glm::vec3 n = normals.at(index-1);
+				vertex.push_back(n.x);
+				vertex.push_back(n.y);
+				vertex.push_back(n.z);
+
+				face.push_back(vertex);
+			}
+
+			object.insert(object.end(), face.at(0).data(), face.at(0).data() + 8);
+			object.insert(object.end(), face.at(1).data(), face.at(1).data() + 8);
+			object.insert(object.end(), face.at(2).data(), face.at(2).data() + 8);
+
+			object.insert(object.end(), face.at(0).data(), face.at(0).data() + 8);
+			object.insert(object.end(), face.at(2).data(), face.at(2).data() + 8);
+			object.insert(object.end(), face.at(3).data(), face.at(3).data() + 8);
 		}
 		line = strtok_s(NULL, delim, &saveptr);
 	}
-	printf("done");
+	objects.push_back(object);
 
-
-
-
+	printf("Loaded OBJ %s\n", filename);
 }
 
 void addVertex(float* vertexArr, int& addIndex, float* vertices, int index)
@@ -236,7 +289,7 @@ void addVertex(float* vertexArr, int& addIndex, float* vertices, int index)
 	vertexArr[addIndex++] = vertices[index++];
 }
 
-float* createCircle(int& num_Verts)
+float* createCircle(int& num_Verts, bool inverseN)
 {
 	int verts = 2 * 3 * (NUM_SECTORS + 1) * (NUM_STACKS + 1);
 	num_Verts = verts;
@@ -283,9 +336,17 @@ float* createCircle(int& num_Verts)
 			nx = x * lengthInv;
 			ny = y * lengthInv;
 			nz = z * lengthInv;
-			vertices[index++] = (nx);
-			vertices[index++] = (ny);
-			vertices[index++] = (nz);
+
+			if (inverseN) {
+				vertices[index++] = -(nx);
+				vertices[index++] = -(ny);
+				vertices[index++] = -(nz);
+			}
+			else {
+				vertices[index++] = (nx);
+				vertices[index++] = (ny);
+				vertices[index++] = (nz);
+			}
 		}
 	}
 	/*for (int i = 0; i < index; i += 8)
@@ -350,7 +411,17 @@ void drawCannonball(unsigned int shaderProgram, GLuint cannonballTex, int index)
 	glBindTexture(GL_TEXTURE_2D, cannonballTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	model = glm::scale(model, glm::vec3(0.5f, 0.5f, 0.5f));
+	model = glm::translate(model, glm::vec3(4.3f, -.5f, 0.f));
+	model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
+
+	if (cannonBallPos == -1) {
+		return;
+	}
+	else if (cannonBallPos > 0) {
+		model = glm::translate(model, glm::vec3((float)cannonBallPos, 0.f, 0.f));
+		model = glm::rotate(model, (float)cannonBallPos/5 ,glm::vec3(1.f, 1.f, 1.f));
+	}
+
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 	int modelType = 0;
@@ -403,7 +474,7 @@ void drawSun(unsigned int shaderProgram, GLuint sunTex, int index)
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float)glfwGetTime() / 20, sunRotation);
 	model = glm::translate(model, initSunPos);
-	model = glm::translate(model, glm::vec3(5.f) * glm::normalize(initSunPos));
+	model = glm::translate(model, glm::vec3(6.f) * glm::normalize(initSunPos));
 	model = glm::rotate(model, (float)glfwGetTime() / 20, -sunRotation);
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
@@ -413,14 +484,39 @@ void drawSun(unsigned int shaderProgram, GLuint sunTex, int index)
 	glDrawArrays(GL_TRIANGLES, 0, SPHERE_VERTS);
 }
 
-void drawObjects(unsigned int shaderProgram, GLuint* textures) {
-	drawCannonball(shaderProgram, textures[0], 0);
-	drawSky(shaderProgram, textures[1], 0);
-	drawFloor(shaderProgram, textures[2], 1);
-	drawSun(shaderProgram, textures[3], 0);
+void drawCannon(unsigned int shaderProgram, GLuint sunTex, int index, int verts)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glBindVertexArray(VAOs[index]);
+	glBindTexture(GL_TEXTURE_2D, sunTex);
+
+	glm::mat4 model = glm::mat4(1.f);
+	model = glm::translate(model, glm::vec3(0.f, -2.9f, 0.f));
+	model = glm::rotate(model, (float) M_PI/2 , glm::vec3(-1.f, 0.f, 0.f));
+	model = glm::scale(model, glm::vec3(.04f, .04f, .04f));
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+	int modelType = 3;
+	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+
+	glDrawArrays(GL_TRIANGLES, 0, verts * sizeof(float));
 }
 
-void renderWithShadow(unsigned int renderShaderProgram, ShadowStruct shadow[NUM_LIGHTS], glm::mat4 projectedLightSpaceMatrix[], GLuint* textures)
+void drawObjects(unsigned int shaderProgram, GLuint* textures, std::vector<int> verts) {
+	drawCannonball(shaderProgram, textures[0], 0);
+	drawSky(shaderProgram, textures[1], 1);
+	drawFloor(shaderProgram, textures[2], 2);
+	drawSun(shaderProgram, textures[3], 0);
+	drawCannon(shaderProgram, textures[4], 3, verts.at(3));
+	drawCannon(shaderProgram, textures[5], 4, verts.at(4));
+	drawCannon(shaderProgram, textures[6], 5, verts.at(5));
+	drawCannon(shaderProgram, textures[4], 6, verts.at(6));
+	drawCannon(shaderProgram, textures[4], 7, verts.at(7));
+	drawCannon(shaderProgram, textures[4], 8, verts.at(8));
+}
+
+void renderWithShadow(unsigned int renderShaderProgram, ShadowStruct shadow[NUM_LIGHTS], glm::mat4 projectedLightSpaceMatrix[], GLuint* textures, std::vector<int> verts)
 {
 	glViewport(0, 0, WIDTH, HEIGHT);
 
@@ -478,10 +574,10 @@ void renderWithShadow(unsigned int renderShaderProgram, ShadowStruct shadow[NUM_
 	projection = glm::perspective(glm::radians(45.f), (float)WIDTH / (float)HEIGHT, .01f, 100.f);
 	glUniformMatrix4fv(glGetUniformLocation(renderShaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-	drawObjects(renderShaderProgram, textures);
+	drawObjects(renderShaderProgram, textures, verts);
 }
 
-void generateDepthMap(unsigned int shadowShaderProgram, ShadowStruct shadow[NUM_LIGHTS], glm::mat4 projectedLightSpaceMatrix[], GLuint* textures)
+void generateDepthMap(unsigned int shadowShaderProgram, ShadowStruct shadow[NUM_LIGHTS], glm::mat4 projectedLightSpaceMatrix[], GLuint* textures, std::vector<int> verts)
 {
 	glViewport(0, 0, SH_MAP_WIDTH, SH_MAP_HEIGHT);
 
@@ -501,7 +597,7 @@ void generateDepthMap(unsigned int shadowShaderProgram, ShadowStruct shadow[NUM_
 
 		glUniformMatrix4fv(glGetUniformLocation(shadowShaderProgram, "projectedLightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(projectedLightSpaceMatrix[i]));
 
-		drawObjects(shadowShaderProgram, textures);
+		drawObjects(shadowShaderProgram, textures, verts);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -521,10 +617,8 @@ int main(int argc, char** argv)
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(DebguMessageCallback, 0);
 
-
 	GLuint program = CompileShader("phong.vert", "phong.frag");
 	GLuint shadowProgram = CompileShader("shadow.vert", "shadow.frag");
-
 
 	ShadowStruct shadow[NUM_LIGHTS];
 	for (int i = 0; i < NUM_LIGHTS; i++) {
@@ -532,7 +626,8 @@ int main(int argc, char** argv)
 	}
 
 	int numSphereVerts;
-	float* sphere = createCircle(numSphereVerts);
+	float* sphere = createCircle(numSphereVerts, false);
+	float* invSphere = createCircle(numSphereVerts, true);
 	float floor[] = {
 			-1.f,  1.f, -1.f,  	0.0f, 0.0f,   0.f, 1.f, 0.f,
 			1.f,  1.f, -1.f,  	50.f, 0.0f,   0.f, 1.f, 0.f,
@@ -551,58 +646,96 @@ int main(int argc, char** argv)
 	"Assets/grass/grass2_32.bmp"
 	};
 
-	GLuint cannonballTex = setup_texture("Assets/cannonball.bmp", false);
-	GLuint skyTex = setup_texture("Assets/sky_texture2.bmp", false);
-	GLuint floorTex = setup_mipmaps(files, 6, true);
-	GLuint sunTex = setup_texture("Assets/sun.bmp", false);
-
 	GLuint* textures = (GLuint*)calloc(NUMTEXTURES, sizeof(GLuint));
+	textures[0] = setup_texture("Assets/cannonball.bmp", false);
+	textures[1] = setup_texture("Assets/sky_texture2.bmp", false);
+	textures[2] = setup_mipmaps(files, 6, true);
+	textures[3] = setup_texture("Assets/sun.bmp", false);
+	textures[4] = setup_texture("Assets/14054_Pirate_Ship_Cannon_on_Cart_wheel_diff.bmp", false);
+	textures[5] = setup_texture("Assets/14054_Pirate_Ship_Cannon_on_Cart_cart_diff.bmp", false);
+	textures[6] = setup_texture("Assets/14054_Pirate_Ship_Cannon_on_Cart_barrel_diff.bmp", false);
+		
+	std::vector<std::vector<float>> cannonObject;
+	objParser("Assets/pirate_cannon.obj", cannonObject);
 
-	textures[0] = cannonballTex;
-	textures[1] = skyTex;
-	textures[2] = floorTex;
-	textures[3] = sunTex;
-
-	objParser("Assets/pirate_cannon.obj");
+	float** cannon = new float* [cannonObject.size()];
+	for (int i = 0; i < cannonObject.size(); i++) {
+		//cannon[i] = new float[cannonObject.at(i).size()];
+		cannon[i] = cannonObject.at(i).data();
+	}
 
 	InitCamera(camera);
-	cam_dist = 10.f;
+	cam_dist = 20.f;
 	MoveAndOrientCamera(camera, glm::vec3(0, 0, 0), cam_dist, 0.f, 0.f);
 
 	// Create Buffers and VAOs
 	glCreateBuffers(NUM_BUFFERS, Buffers);
 	glGenVertexArrays(NUM_VAOS, VAOs);
 
+	int index = -1;
+	std::vector<int> verts;
+
 	// Cannonball = 0
-	// Sky = 0
 	// Sun = 0
-	glNamedBufferStorage(Buffers[0], numSphereVerts * 8 * sizeof(float), sphere, 0);
-	glBindVertexArray(VAOs[0]);
-	glBindBuffer(GL_ARRAY_BUFFER, Buffers[0]);
+	index++;
+	glNamedBufferStorage(Buffers[index], numSphereVerts * 8 * sizeof(float), sphere, 0);
+	glBindVertexArray(VAOs[index]);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(5 * sizeof(float)));
 	glEnableVertexAttribArray(2);
+	verts.push_back(numSphereVerts * 8);
+	
+	// Sky = 1
+	index++;
+	glNamedBufferStorage(Buffers[index], numSphereVerts * 8 * sizeof(float), invSphere, 0);
+	glBindVertexArray(VAOs[index]);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	verts.push_back(numSphereVerts * 8);
 
-	// Floor = 1
-	glNamedBufferStorage(Buffers[1], 6 * 8 * sizeof(float), floor, 0);
-	glBindVertexArray(VAOs[1]);
-	glBindBuffer(GL_ARRAY_BUFFER, Buffers[1]);
+	// Floor = 2
+	index++;
+	glNamedBufferStorage(Buffers[index], 6 * 8 * sizeof(float), floor, 0);
+	glBindVertexArray(VAOs[index]);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)0);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(5 * sizeof(float)));
 	glEnableVertexAttribArray(2);
+	verts.push_back(6 * 8);
+	
+	for (int i = 0; i < cannonObject.size(); i++) {
+		// Cannon = 3 - 8
+		index++;
+		glNamedBufferStorage(Buffers[index], cannonObject.at(i).size() *sizeof(float), cannon[i], 0);
+		glBindVertexArray(VAOs[index]);
+		glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)0);
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(3 * sizeof(float)));
+		glEnableVertexAttribArray(1);
+		glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(5 * sizeof(float)));
+		glEnableVertexAttribArray(2);
+		verts.push_back(cannonObject.at(i).size());
+	}
 
 	glEnable(GL_DEPTH_TEST);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
-	lightPos[1] = camera.Position;
-	lightDirection[1] = camera.Front;
+	/*lightPos[1] = camera.Position;
+	lightDirection[1] = camera.Front;*/
 	while (!glfwWindowShouldClose(window))
 	{
 		glm::mat4 model = glm::mat4(1.f);
@@ -613,7 +746,11 @@ int main(int argc, char** argv)
 		lightPos[0] = glm::vec3(model * glm::vec4(0.f, 0.f, 0.f, -1.f));
 		lightDirection[0] = glm::normalize(glm::vec3(0.f, 1.f, 0.f) - lightPos[0]);
 
-
+		if (cannonBallPos > 0) {
+			cannonBallPos += CANNONBALL_SPEED;
+		} if (cannonBallPos >= 100) {
+			cannonBallPos = -1;
+		}
 
 		glm::mat4 projectedLightSpaceMatrix[NUM_LIGHTS];
 		for (int lightIndex = 0; lightIndex < NUM_LIGHTS; lightIndex++)
@@ -621,29 +758,32 @@ int main(int argc, char** argv)
 			glm::mat4 lightProjection;
 			glm::mat4 lightView;
 			// Spotlight and positional
-			if (lightType[lightIndex] == 0 || lightType[lightIndex] == 2) {
-				float near_plane = 1.0f; float far_plane = 50.f;
-				lightProjection = glm::perspective(glm::radians(45.f), (float)WIDTH / (float)HEIGHT, near_plane, far_plane);
+			if (lightType[lightIndex] == 1 || lightType[lightIndex] == 2) {
+				float near_plane = 15.0f; float far_plane = 90.f;
+				lightProjection = glm::perspective(glm::radians(90.f), (float)WIDTH / (float)HEIGHT, near_plane, far_plane);
 				lightView = glm::lookAt(lightPos[lightIndex], lightPos[lightIndex] + lightDirection[lightIndex], glm::vec3(0.0f, 1.0f, 0.0f));
 			}
 			// Directional
-			else if (lightType[lightIndex] == 1) {
-				float near_plane = 1.f, far_plane = 50.f;
-				lightProjection = glm::ortho(-10.f, 10.f, -10.f, 10.f, near_plane, far_plane);
+			else if (lightType[lightIndex] == 0) {
+				float near_plane = 10.f, far_plane = 75.f;
+				lightProjection = glm::ortho(-25.f, 25.f, -25.f, 25.f, near_plane, far_plane);
 				lightView = glm::lookAt(lightPos[lightIndex], lightPos[lightIndex] + lightDirection[lightIndex], glm::vec3(0.0f, 1.0f, 0.f));
 			}
 			projectedLightSpaceMatrix[lightIndex] = lightProjection * lightView;
 		}
 
-		generateDepthMap(shadowProgram, shadow, projectedLightSpaceMatrix, textures);
+		generateDepthMap(shadowProgram, shadow, projectedLightSpaceMatrix, textures, verts);
 
 		//saveShadowMapToBitmap(shadow[1].Texture, SH_MAP_WIDTH, SH_MAP_HEIGHT);
 
-		renderWithShadow(program, shadow, projectedLightSpaceMatrix, textures);
+		renderWithShadow(program, shadow, projectedLightSpaceMatrix, textures, verts);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
+
+	//delete[] cannon;
+	delete[] textures;
 
 	glfwDestroyWindow(window);
 	glfwTerminate();

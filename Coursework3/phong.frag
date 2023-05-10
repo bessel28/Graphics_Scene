@@ -129,7 +129,6 @@ float CalculateSpotIllumination(int lightIndex, float shadow)
 	float dist = length(lightPos[lightIndex] - FragPosWorldSpace);
 	float attenuation = 1 / (attConst + (attLin * dist) + (attQuad * pow(dist, 2.f)));
 
-
 	float cut_off = 15.f;
 	float phi = cos(radians(cut_off));
 	vec3 NSpotDir = normalize(lightDirection[lightIndex]);
@@ -176,6 +175,7 @@ void main()
 	case 1:
 	case 2:
 	case 3:
+	case 4:
 		fColour = texture(Texture, tex) * vec4(phong * lightColour, 1.f);
 		break;
 	default:

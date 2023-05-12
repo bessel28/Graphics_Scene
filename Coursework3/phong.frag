@@ -49,9 +49,9 @@ float shadowOnFragment(int lightIndex)
 
 	vec3 Nnor = normalize(nor);
 	vec3 NtoLight = normalize(-lightDirection[lightIndex]);
-	float bias = max(0.05 * (1.0 - dot(Nnor, NtoLight)), 0.005);
 
 	float shadow = 0.f;
+	float bias = max(0.01 * (1.0 - dot(Nnor, NtoLight)), 0.001);
 	shadow = fragDepth > (litDepth + bias) ? 1.0 : 0.0;
 
 	if (fragDepth > 1)
@@ -177,6 +177,12 @@ void main()
 	case 3:
 	case 4:
 		fColour = texture(Texture, tex) * vec4(phong * lightColour, 1.f);
+		break;
+	case 5:
+		fColour = vec4(phong * vec3(169.f/255,140.f/255,106.f/255), 1.f);
+		break;
+	case 6:
+		fColour = vec4(phong * vec3(.3f, .3f, .3f), 1.f);
 		break;
 	default:
 		fColour = vec4(phong * vec3(1.f, 0.f, 0.f), 1.f);

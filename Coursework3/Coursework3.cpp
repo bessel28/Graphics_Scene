@@ -576,7 +576,7 @@ void drawCannonball(unsigned int shaderProgram, GLuint cannonballTex, int index)
 	glBindTexture(GL_TEXTURE_2D, cannonballTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	model = glm::translate(model, glm::vec3(4.3f, -.5f, 0.f));
+	model = glm::translate(model, glm::vec3(4.3f, 2.5f, 0.f));
 	
 	model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
 
@@ -659,7 +659,7 @@ void drawCannon(unsigned int shaderProgram, GLuint cannonTex, int index, int ver
 	glBindTexture(GL_TEXTURE_2D, cannonTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	model = glm::translate(model, glm::vec3(0.f, -2.9f, 0.f));
+	//model = glm::translate(model, glm::vec3(0.f, -2.9f, 0.f));
 	model = glm::rotate(model, (float) M_PI/2 , glm::vec3(-1.f, 0.f, 0.f));
 	model = glm::scale(model, glm::vec3(.04f, .04f, .04f));
 
@@ -680,7 +680,7 @@ void drawTank(unsigned int shaderProgram, int index, int verts)
 	baseModel = glm::rotate(baseModel, (float)glfwGetTime(), glm::vec3(.0f, -1.f, .0f));
 	baseModel = glm::translate(baseModel, glm::vec3(0.f, 0.f, 10.f));
 	if (index == 12 || index == 13 || index == 14 || index == 15) baseModel = glm::rotate(baseModel, (float)glfwGetTime() * 1.3f, glm::vec3(0.f, 1.f, 0.f));
-	baseModel = glm::translate(baseModel, glm::vec3(1.f, -2.4375f, -5.7f));
+	baseModel = glm::translate(baseModel, glm::vec3(1.f, 0.5625f, -5.7f));
 	baseModel = glm::scale(baseModel, glm::vec3(5.f));
 
 	if (index == 12 || index == 13 || index == 14 || index == 15) {
@@ -716,7 +716,7 @@ void drawLamp(unsigned int shaderProgram, int index, int verts)
 
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float)M_PI / 2, glm::vec3(0.f, 1.f, 0.f));
-	model = glm::translate(model, glm::vec3(0.f, -.23f, -6.f));
+	model = glm::translate(model, glm::vec3(0.f, 2.65f, -6.f));
 	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, 1.f, -0.f));
 	model = glm::scale(model, glm::vec3(.006f));
 
@@ -759,7 +759,7 @@ void drawChest(unsigned int shaderProgram, int index, int verts) {
 
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, -1.f, 0.f));
-	model = glm::translate(model, glm::vec3(3.f, -2.35f, 0.f));
+	model = glm::translate(model, glm::vec3(3.f, .65f, 0.f));
 
 	if (index == 24) {
 		model = glm::scale(model, glm::vec3(2.f, 1.f, 2.5f));
@@ -784,7 +784,7 @@ void drawFillChest(unsigned int shaderProgram, GLuint cannonballTex, int index) 
 	glBindTexture(GL_TEXTURE_2D, cannonballTex);
 	
 	glm::mat4 model = glm::mat4(1.f);
-	model = glm::translate(model, glm::vec3(.67f, -2.2f, 2.3f));
+	model = glm::translate(model, glm::vec3(.67f, .8f, 2.3f));
 	model = glm::scale(model, glm::vec3(0.3f));
 	//model = glm::translate(model, glm::vec3(, 0.f, 0.f));
 	for (int i = 0; i < 3; i++) {
@@ -801,7 +801,7 @@ void drawFillChest(unsigned int shaderProgram, GLuint cannonballTex, int index) 
 		model = glm::translate(model, glm::vec3(0.f, 0.f, 2.2f));
 	}
 	model = glm::mat4(1.f);
-	model = glm::translate(model, glm::vec3(0.4f, -1.75f, 2.66f));
+	model = glm::translate(model, glm::vec3(0.4f, 1.25f, 2.66f));
 	model = glm::scale(model, glm::vec3(0.3f));
 	//model = glm::translate(model, glm::vec3(, 0.f, 0.f));
 	for (int i = 0; i < 2; i++) {
@@ -4049,56 +4049,6 @@ int main(int argc, char** argv)
 
 	int numCircleVerts;
 	std::vector<float> floor = createCircle(numCircleVerts);
-	//float floor[] = {
-	//		-1.f,  1.f, -1.f,  	0.0f, 0.0f,   0.f, 1.f, 0.f,
-	//		1.f,  1.f, -1.f,  	50.f, 0.0f,   0.f, 1.f, 0.f,
-	//		1.f,  1.f,  1.f,  	50.f, 50.f,   0.f, 1.f, 0.f,
-	//		1.f,  1.f,  1.f,  	50.f, 50.f,   0.f, 1.f, 0.f,
-	//		-1.f,  1.f,  1.f,  	0.0f, 50.f,   0.f, 1.f, 0.f,
-	//		-1.f,  1.f, -1.f, 	0.0f, 0.0f,   0.f, 1.f, 0.f,
-
-	//		//back face
-	//		-1.f, -1.f, -1.f, 0.0f, 0.0f, 	   0.f, 0.f, -1.f,
-	//		1.f, -1.f, -1.f,  0.0f, 0.0f,	   0.f, 0.f, -1.f,
-	//		1.f,  1.f, -1.f,  0.0f, 0.0f,	   0.f, 0.f, -1.f,
-	//		1.f,  1.f, -1.f,  0.0f, 0.0f,	   0.f, 0.f, -1.f,
-	//		-1.f,  1.f, -1.f, 0.0f, 0.0f, 	   0.f, 0.f, -1.f,
-	//		-1.f, -1.f, -1.f, 0.0f, 0.0f, 	   0.f, 0.f, -1.f,
-
-	//		//front face
-	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
-	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
-	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
-	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
-	//		-1.f,  1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
-	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
-
-	//		//left face
-	//		-1.f,  1.f,  1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
-	//		-1.f,  1.f, -1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
-	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
-	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
-	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
-	//		-1.f,  1.f,  1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
-
-	//		//right face
-	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
-	//		1.f,  1.f, -1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
-	//		1.f, -1.f, -1.f, 	 0.0f, 0.0f,  1.f, 0.f, 0.f,
-	//		1.f, -1.f, -1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
-	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
-	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
-
-	//		//bottom face
-	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
-	//		1.f, -1.f, -1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
-	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
-	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
-	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
-	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
-	//};
-
-	
 
 	const char* files[6] = {
 	"Assets/grass/grass2_1024.bmp",

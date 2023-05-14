@@ -24,8 +24,8 @@
 
 SCamera camera;
 
-#define NUM_BUFFERS 23
-#define NUM_VAOS 23
+#define NUM_BUFFERS 26
+#define NUM_VAOS 26
 #define NUMTEXTURES 7
 
 GLuint Buffers[NUM_BUFFERS];
@@ -147,7 +147,7 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 		if ((key == GLFW_KEY_LEFT || key == GLFW_KEY_A) && action == GLFW_REPEAT) {
 			r_offset = -1.f;
 			cam_changed = true;
-		}if ((key == GLFW_KEY_UP || key == GLFW_KEY_W) && action == GLFW_REPEAT) {
+		}if ((key == GLFW_KEY_UP || key == GLFW_KEY_W)){//&& action == GLFW_REPEAT) {
 			f_offset = 1.f;
 			cam_changed = true;
 		}
@@ -316,7 +316,21 @@ void addVertex(float* vertexArr, int& addIndex, float* vertices, int index)
 	vertexArr[addIndex++] = vertices[index++];
 }
 
-float* createCircle(int& num_Verts, bool inverseN)
+void addVertex(std::vector<float> &vertexArr, float* vertices, int index, int lowerOffset, glm::vec3 nor)
+{
+	vertexArr.push_back(vertices[index++]);
+	vertexArr.push_back(vertices[index++] - lowerOffset);
+	vertexArr.push_back(vertices[index++]);
+	
+	vertexArr.push_back(0);
+	vertexArr.push_back(0);
+	
+	vertexArr.push_back(nor.x);
+	vertexArr.push_back(nor.y);
+	vertexArr.push_back(nor.z);
+}
+
+float* createSphere(int& num_Verts, bool inverseN)
 {
 	int verts = 2 * 3 * (NUM_SECTORS + 1) * (NUM_STACKS + 1);
 	num_Verts = verts;
@@ -431,6 +445,130 @@ float* createCircle(int& num_Verts, bool inverseN)
 	return sphere;
 }
 
+std::vector<float> createCircle(int& num_Verts) {
+
+	int verts = 2 * 3 * (NUM_SECTORS + 1) * (NUM_STACKS + 1);
+	num_Verts = verts;
+	std::vector<float> vertices;
+
+	float x, y, z, xz;
+	float nx, ny, nz, lengthInv = 1.0f / RADIUS;
+	float u, v;
+
+	float sectorStep = 2 * M_PI / NUM_SECTORS;
+	float sectorAngle;
+
+	int index = 0;
+
+	y = 0.f;
+	for (int j = 0; j <= NUM_SECTORS; j++)
+	{
+		sectorAngle = j * sectorStep;
+
+		// vertex pos
+		x = RADIUS * cosf(sectorAngle);
+		z = RADIUS * sinf(sectorAngle);
+		vertices.push_back(x);
+		vertices.push_back(y);
+		vertices.push_back(z);
+
+		// UV coordintaes
+		float u = (float)j / NUM_SECTORS;
+
+		float tx = (x + RADIUS) / 2 * RADIUS;
+		float ty = (z + RADIUS) / 2 * RADIUS;
+
+		vertices.push_back(tx * 50.f);
+		vertices.push_back(ty * 50.f);
+
+		// vertex Normals
+		nx = 0.f;
+		ny = 1.f;
+		nz = 0.f;
+
+		vertices.push_back(nx);
+		vertices.push_back(ny);
+		vertices.push_back(nz);
+	}
+	
+	std::vector<float> circle;
+	for (int i = 0; i < 2; i++) {
+		for (int j = 0; j <= NUM_SECTORS; j++)
+		{
+			int p1 = j * 8;
+			int p2;
+			if (j == NUM_SECTORS) {
+				p2 = 0;
+			}
+			else {
+				p2 = (j + 1) * 8;
+			}
+
+			int norOff = i == 0 ? 1 : -1;
+
+			circle.push_back(vertices[p1++]);
+			circle.push_back(vertices[p1++] - i);
+			circle.push_back(vertices[p1++]);
+
+			circle.push_back(vertices[p1++]);
+			circle.push_back(vertices[p1++]);
+
+			circle.push_back(vertices[p1++]);
+			circle.push_back(vertices[p1++] * norOff);
+			circle.push_back(vertices[p1++]);
+
+
+			circle.push_back(vertices[p2++]);
+			circle.push_back(vertices[p2++] - i);
+			circle.push_back(vertices[p2++]);
+
+			circle.push_back(vertices[p2++]);
+			circle.push_back(vertices[p2++]);
+
+			circle.push_back(vertices[p2++]);
+			circle.push_back(vertices[p2++] * norOff);
+			circle.push_back(vertices[p2++]);
+
+
+			circle.push_back(0.f);
+			circle.push_back(0.f - i);
+			circle.push_back(0.f);
+
+			circle.push_back(25.f);
+			circle.push_back(25.f);
+
+			circle.push_back(0.f);
+			circle.push_back(1.f * norOff);
+			circle.push_back(0.f);
+		}
+	}
+
+	for (int j = 0; j <= NUM_SECTORS; j++) {
+		int p1 = j * 8;
+		int p2;
+		if (j == NUM_SECTORS) {
+			p2 = 0;
+		}
+		else {
+			p2 = (j + 1) * 8;
+		}
+
+		glm::vec3 tan = (glm::vec3(vertices[p2], vertices[p2 + 1], vertices[p2 + 2]) - glm::vec3(vertices[p1], vertices[p1 + 1], vertices[p1 + 2]));
+		glm::vec3 nor = glm::normalize(glm::vec3(-tan.y, tan.x, tan.z));
+
+		addVertex(circle, vertices.data(), p1, 0, nor);
+		addVertex(circle, vertices.data(), p2, 0, nor);
+		addVertex(circle, vertices.data(), p2, 1, nor);
+											
+		addVertex(circle, vertices.data(), p1, 0, nor);
+		addVertex(circle, vertices.data(), p1, 1, nor);
+		addVertex(circle, vertices.data(), p2, 1, nor);
+
+	}
+
+	return circle;
+}
+
 void drawCannonball(unsigned int shaderProgram, GLuint cannonballTex, int index)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
@@ -445,8 +583,8 @@ void drawCannonball(unsigned int shaderProgram, GLuint cannonballTex, int index)
 	if (cannonBallPos == -1) {
 		return;
 	}
-	else if (cannonBallPos > 0) {
-		model = glm::translate(model, glm::vec3((float)cannonBallPos, (float)cannonBallPos / 10, 0.f));
+	else if (cannonBallPos > 1) {
+		model = glm::translate(model, glm::vec3((float)cannonBallPos - 1, (float)(cannonBallPos -1) / 10, 0.f));
 		model = glm::rotate(model, (float)cannonBallPos / 5, glm::vec3(1.f, 1.f, 1.f));
 	}
 
@@ -477,29 +615,22 @@ void drawSky(unsigned int shaderProgram, GLuint skyTex, int index)
 
 }
 
-void drawFloor(unsigned int shaderProgram, GLuint floorTex, int index)
+void drawFloor(unsigned int shaderProgram, GLuint floorTex, int index, int verts)
 {
 	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
 	glBindVertexArray(VAOs[index]);
 	glBindTexture(GL_TEXTURE_2D, floorTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	model = glm::translate(model, glm::vec3(0, -3, 0));
+	//model = glm::translate(model, glm::vec3(0, -3, 0));
 
-	model = glm::scale(model, glm::vec3(25, 0.1, 25));
+	model = glm::scale(model, glm::vec3(24.9, 0.01, 24.9));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 	int modelType = 2;
 	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
 
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-
-	modelType = 5;
-	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
-	model = glm::translate(model, glm::vec3(0, -0.1, 0));
-	model = glm::rotate(model, (float)M_PI, glm::vec3(1.0f, .0f, .0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDrawArrays(GL_TRIANGLES, 0, verts);
 }
 
 void drawSun(unsigned int shaderProgram, GLuint sunTex, int index)
@@ -537,7 +668,7 @@ void drawCannon(unsigned int shaderProgram, GLuint cannonTex, int index, int ver
 	int modelType = 4;
 	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
 
-	glDrawArrays(GL_TRIANGLES, 0, verts * sizeof(float));
+	glDrawArrays(GL_TRIANGLES, 0, verts);
 }
 
 void drawTank(unsigned int shaderProgram, int index, int verts)
@@ -566,7 +697,7 @@ void drawTank(unsigned int shaderProgram, int index, int verts)
 
 	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
 
-	glDrawArrays(GL_TRIANGLES, 0, verts * sizeof(float));
+	glDrawArrays(GL_TRIANGLES, 0, verts);
 
 	if (index == 10) {
 		model = glm::translate(model,  glm::vec3(0.f, 0.f, .725f));
@@ -574,7 +705,7 @@ void drawTank(unsigned int shaderProgram, int index, int verts)
 
 
 
-		glDrawArrays(GL_TRIANGLES, 0, verts * sizeof(float));
+		glDrawArrays(GL_TRIANGLES, 0, verts);
 	}
 }
 
@@ -585,7 +716,7 @@ void drawLamp(unsigned int shaderProgram, int index, int verts)
 
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float)M_PI / 2, glm::vec3(0.f, 1.f, 0.f));
-	model = glm::translate(model, glm::vec3(0.f, -.2f, -6.f));
+	model = glm::translate(model, glm::vec3(0.f, -.23f, -6.f));
 	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, 1.f, -0.f));
 	model = glm::scale(model, glm::vec3(.006f));
 
@@ -594,13 +725,106 @@ void drawLamp(unsigned int shaderProgram, int index, int verts)
 	int modelType = 7;
 	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
 
-	glDrawArrays(GL_TRIANGLES, 0, verts * sizeof(float));
+	glDrawArrays(GL_TRIANGLES, 0, verts);
+}
+
+void drawStreet(unsigned int shaderProgram, GLuint streetTex, int index, int verts)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glBindVertexArray(VAOs[index]);
+	glBindTexture(GL_TEXTURE_2D, streetTex);
+
+	glm::mat4 model = glm::mat4(1.f);
+	//model = glm::translate(model, glm::vec3(0, -3, 0));
+
+	model = glm::scale(model, glm::vec3(25, 0.1, 25));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+	int modelType = 2;
+	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	modelType = 5;
+	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+	model = glm::translate(model, glm::vec3(0, -0.1, 0));
+	model = glm::rotate(model, (float)M_PI, glm::vec3(1.0f, .0f, .0f));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
+void drawChest(unsigned int shaderProgram, int index, int verts) {
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glBindVertexArray(VAOs[index]);
+
+	glm::mat4 model = glm::mat4(1.f);
+	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, -1.f, 0.f));
+	model = glm::translate(model, glm::vec3(3.f, -2.35f, 0.f));
+
+	if (index == 24) {
+		model = glm::scale(model, glm::vec3(2.f, 1.f, 2.5f));
+		model = glm::translate(model, glm::vec3(0.f, 0.f, .33f));
+	}
+	else if (index == 23) {
+		model = glm::translate(model, glm::vec3(0.f, -.1f, .08f));
+		model = glm::scale(model, glm::vec3(2.f, 1.f, 1.f));
+	}
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+	int modelType = 8;
+	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+
+	glDrawArrays(GL_TRIANGLES, 0, verts);
+}
+
+void drawFillChest(unsigned int shaderProgram, GLuint cannonballTex, int index) {
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glBindVertexArray(VAOs[index]);
+	glBindTexture(GL_TEXTURE_2D, cannonballTex);
+	
+	glm::mat4 model = glm::mat4(1.f);
+	model = glm::translate(model, glm::vec3(.67f, -2.2f, 2.3f));
+	model = glm::scale(model, glm::vec3(0.3f));
+	//model = glm::translate(model, glm::vec3(, 0.f, 0.f));
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 4; j++) {
+			model = glm::translate(model, glm::vec3(-2.f, 0.f, 0.f));
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+			int modelType = 0;
+			glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+
+			glDrawArrays(GL_TRIANGLES, 0, SPHERE_VERTS);
+		}
+		model = glm::translate(model, glm::vec3(8.f, 0.f, 0.f));
+		model = glm::translate(model, glm::vec3(0.f, 0.f, 2.2f));
+	}
+	model = glm::mat4(1.f);
+	model = glm::translate(model, glm::vec3(0.4f, -1.75f, 2.66f));
+	model = glm::scale(model, glm::vec3(0.3f));
+	//model = glm::translate(model, glm::vec3(, 0.f, 0.f));
+	for (int i = 0; i < 2; i++) {
+		for (int j = 0; j < 3; j++) {
+			model = glm::translate(model, glm::vec3(-2.15f, 0.f, 0.f));
+			glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+			int modelType = 0;
+			glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+
+			glDrawArrays(GL_TRIANGLES, 0, SPHERE_VERTS);
+		}
+		model = glm::translate(model, glm::vec3(6.45f, 0.f, 0.f));
+		model = glm::translate(model, glm::vec3(0.f, 0.f, 2.3f));
+	}
+
+
 }
 
 void drawObjects(unsigned int shaderProgram, GLuint* textures, std::vector<int> verts) {
 	drawCannonball(shaderProgram, textures[0], 0);
 	drawSky(shaderProgram, textures[1], 1);
-	drawFloor(shaderProgram, textures[2], 2);
+	drawFloor(shaderProgram, textures[2], 2, verts[2]);
 	drawSun(shaderProgram, textures[3], 0);
 	drawCannon(shaderProgram, textures[4], 3, verts[3]);
 	drawCannon(shaderProgram, textures[5], 4, verts[4]);
@@ -614,7 +838,9 @@ void drawObjects(unsigned int shaderProgram, GLuint* textures, std::vector<int> 
 	for (int i = 16; i < 23; i++) {
 		drawLamp(shaderProgram, i, verts[i]);
 	}
-
+	drawChest(shaderProgram, 23, verts[23]);
+	drawChest(shaderProgram, 24, verts[24]);
+	drawFillChest(shaderProgram, textures[0], 0);
 }
 
 void renderWithShadow(unsigned int renderShaderProgram, ShadowStruct shadow[NUM_LIGHTS], glm::mat4 projectedLightSpaceMatrix[], GLuint* textures, std::vector<int> verts)
@@ -3818,16 +4044,61 @@ int main(int argc, char** argv)
 	}
 
 	int numSphereVerts;
-	float* sphere = createCircle(numSphereVerts, false);
-	float* invSphere = createCircle(numSphereVerts, true);
-	float floor[] = {
-			-1.f,  1.f, -1.f,  	0.0f, 0.0f,   0.f, 1.f, 0.f,
-			1.f,  1.f, -1.f,  	50.f, 0.0f,   0.f, 1.f, 0.f,
-			1.f,  1.f,  1.f,  	50.f, 50.f,   0.f, 1.f, 0.f,
-			1.f,  1.f,  1.f,  	50.f, 50.f,   0.f, 1.f, 0.f,
-			-1.f,  1.f,  1.f,  	0.0f, 50.f,   0.f, 1.f, 0.f,
-			-1.f,  1.f, -1.f, 	0.0f, 0.0f,   0.f, 1.f, 0.f,
-	};
+	float* sphere = createSphere(numSphereVerts, false);
+	float* invSphere = createSphere(numSphereVerts, true);
+
+	int numCircleVerts;
+	std::vector<float> floor = createCircle(numCircleVerts);
+	//float floor[] = {
+	//		-1.f,  1.f, -1.f,  	0.0f, 0.0f,   0.f, 1.f, 0.f,
+	//		1.f,  1.f, -1.f,  	50.f, 0.0f,   0.f, 1.f, 0.f,
+	//		1.f,  1.f,  1.f,  	50.f, 50.f,   0.f, 1.f, 0.f,
+	//		1.f,  1.f,  1.f,  	50.f, 50.f,   0.f, 1.f, 0.f,
+	//		-1.f,  1.f,  1.f,  	0.0f, 50.f,   0.f, 1.f, 0.f,
+	//		-1.f,  1.f, -1.f, 	0.0f, 0.0f,   0.f, 1.f, 0.f,
+
+	//		//back face
+	//		-1.f, -1.f, -1.f, 0.0f, 0.0f, 	   0.f, 0.f, -1.f,
+	//		1.f, -1.f, -1.f,  0.0f, 0.0f,	   0.f, 0.f, -1.f,
+	//		1.f,  1.f, -1.f,  0.0f, 0.0f,	   0.f, 0.f, -1.f,
+	//		1.f,  1.f, -1.f,  0.0f, 0.0f,	   0.f, 0.f, -1.f,
+	//		-1.f,  1.f, -1.f, 0.0f, 0.0f, 	   0.f, 0.f, -1.f,
+	//		-1.f, -1.f, -1.f, 0.0f, 0.0f, 	   0.f, 0.f, -1.f,
+
+	//		//front face
+	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
+	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
+	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
+	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
+	//		-1.f,  1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
+	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,   0.f, 0.f, 1.f,
+
+	//		//left face
+	//		-1.f,  1.f,  1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
+	//		-1.f,  1.f, -1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
+	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
+	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
+	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
+	//		-1.f,  1.f,  1.f,  	 0.0f, 0.0f,   -1.f, 0.f, 0.f,
+
+	//		//right face
+	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
+	//		1.f,  1.f, -1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
+	//		1.f, -1.f, -1.f, 	 0.0f, 0.0f,  1.f, 0.f, 0.f,
+	//		1.f, -1.f, -1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
+	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
+	//		1.f,  1.f,  1.f,  	 0.0f, 0.0f,  1.f, 0.f, 0.f,
+
+	//		//bottom face
+	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
+	//		1.f, -1.f, -1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
+	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
+	//		1.f, -1.f,  1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
+	//		-1.f, -1.f,  1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
+	//		-1.f, -1.f, -1.f,  	 0.0f, 0.0f,  0.f, -1.f, 0.f,
+	//};
+
+	
 
 	const char* files[6] = {
 	"Assets/grass/grass2_1024.bmp",
@@ -3855,6 +4126,133 @@ int main(int argc, char** argv)
 
 	std::vector<std::vector<float>> tank;
 	loadTankVerts(tank);
+
+	std::vector<point> ctrl_points;
+	ctrl_points.push_back(point(1.5f, .5f, -0.5f, 0.f, -1.f, 0.f));
+	ctrl_points.push_back(point(1.5f, 0.f, -0.5f, 0.f, -1.f, 0.f));
+	ctrl_points.push_back(point(.5f, 0.f, -0.5f, 0.f, -1.f, 0.f));
+	ctrl_points.push_back(point(.5f, .5f, -0.5f, 0.f, -1.f, 0.f));
+
+	int num_evaluations = 29;
+	std::vector<point> curve = EvaluateBezierCurve(ctrl_points, num_evaluations);
+
+	int num_curve_verts = 0;
+	int num_curve_floats = 0;
+	float* curve_vertices = MakeFloatsFromVector(curve, num_curve_verts, num_curve_floats, 2.5f, 0.1f);
+
+	float chest[] = {
+			//back face
+			-0.5f, -0.5f, -0.5f,  	   0.f, 0.f, -1.f,
+			0.5f, -0.5f, -0.5f,  	   0.f, 0.f, -1.f,
+			0.5f,  0.5f, -0.5f,  	   0.f, 0.f, -1.f,
+			0.5f,  0.5f, -0.5f,  	   0.f, 0.f, -1.f,
+			-0.5f,  0.5f, -0.5f,  	   0.f, 0.f, -1.f,
+			-0.5f, -0.5f, -0.5f,  	   0.f, 0.f, -1.f,
+
+			//front face
+			-0.5f, -0.5f,  0.5f,  	    0.f, 0.f, 1.f,
+			0.5f, -0.5f,  0.5f,  	    0.f, 0.f, 1.f,
+			0.5f,  0.5f,  0.5f,  	    0.f, 0.f, 1.f,
+			0.5f,  0.5f,  0.5f,  	    0.f, 0.f, 1.f,
+			-0.5f,  0.5f,  0.5f,  	    0.f, 0.f, 1.f,
+			-0.5f, -0.5f,  0.5f,  	    0.f, 0.f, 1.f,
+
+			//left face
+			-0.5f,  0.5f,  0.5f,  	    -1.f, 0.f, 0.f,
+			-0.5f,  0.5f, -0.5f,  	    -1.f, 0.f, 0.f,
+			-0.5f, -0.5f, -0.5f,  	    -1.f, 0.f, 0.f,
+			-0.5f, -0.5f, -0.5f,  	    -1.f, 0.f, 0.f,
+			-0.5f, -0.5f,  0.5f,  	    -1.f, 0.f, 0.f,
+			-0.5f,  0.5f,  0.5f,  	    -1.f, 0.f, 0.f,
+
+			//right face
+			0.5f,  0.5f,  0.5f,  	   1.f, 0.f, 0.f,
+			0.5f,  0.5f, -0.5f,  	   1.f, 0.f, 0.f,
+			0.5f, -0.5f, -0.5f, 	   1.f, 0.f, 0.f,
+			0.5f, -0.5f, -0.5f,  	   1.f, 0.f, 0.f,
+			0.5f, -0.5f,  0.5f,  	   1.f, 0.f, 0.f,
+			0.5f,  0.5f,  0.5f,  	   1.f, 0.f, 0.f,
+
+			//bottom face
+			-0.5f, -0.5f, -0.5f,  	   0.f, -1.f, 0.f,
+			0.5f, -0.5f, -0.5f,  	   0.f, -1.f, 0.f,
+			0.5f, -0.5f,  0.5f,  	   0.f, -1.f, 0.f,
+			0.5f, -0.5f,  0.5f,  	   0.f, -1.f, 0.f,
+			-0.5f, -0.5f,  0.5f,  	   0.f, -1.f, 0.f,
+			-0.5f, -0.5f, -0.5f,  	   0.f, -1.f, 0.f,
+
+			// INSIDE FACES
+			-.49f, -.49f, -.49f,  	   0.f, 0.f, 1.f,
+			.49f, -.49f, -.49f,  	   0.f, 0.f, 1.f,
+			.49f,  .5f, -.49f,  	   0.f, 0.f, 1.f,
+			.49f,  .5f, -.49f,  	   0.f, 0.f, 1.f,
+			-.49f,  .5f, -.49f,  	   0.f, 0.f, 1.f,
+			-.49f, -.49f, -.49f,  	   0.f, 0.f, 1.f,
+
+			//front face
+			-.49f, -.49f,  .49f,  	    0.f, 0.f, -1.f,
+			.49f, -.49f,  .49f,  	    0.f, 0.f, -1.f,
+			.49f,  .5f,  .49f,  	    0.f, 0.f, -1.f,
+			.49f,  .5f,  .49f,  	    0.f, 0.f, -1.f,
+			-.49f,  .5f,  .49f,  	    0.f, 0.f, -1.f,
+			-.49f, -.49f,  .49f,  	    0.f, 0.f, -1.f,
+
+			//left face
+			-.49f,  .5f,  .49f,  	    1.f, 0.f, 0.f,
+			-.49f,  .5f, -.49f,  	    1.f, 0.f, 0.f,
+			-.49f, -.49f, -.49f,  	    1.f, 0.f, 0.f,
+			-.49f, -.49f, -.49f,  	    1.f, 0.f, 0.f,
+			-.49f, -.49f,  .49f,  	    1.f, 0.f, 0.f,
+			-.49f,  .5f,  .49f,  	    1.f, 0.f, 0.f,
+
+			//right face
+			.49f,  .5f,  .49f,  	   -1.f, 0.f, 0.f,
+			.49f,  .5f, -.49f,  	   -1.f, 0.f, 0.f,
+			.49f, -.49f, -.49f, 	   -1.f, 0.f, 0.f,
+			.49f, -.49f, -.49f,  	   -1.f, 0.f, 0.f,
+			.49f, -.49f,  .49f,  	   -1.f, 0.f, 0.f,
+			.49f,  .5f,  .49f,  	   -1.f, 0.f, 0.f,
+
+			//bottom face
+			-.49f, -.49f, -.49f,  	   0.f, 1.f, 0.f,
+			.49f, -.49f, -.49f,  	   0.f, 1.f, 0.f,
+			.49f, -.49f,  .49f,  	   0.f, 1.f, 0.f,
+			.49f, -.49f,  .49f,  	   0.f, 1.f, 0.f,
+			-.49f, -.49f,  .49f,  	   0.f, 1.f, 0.f,
+			-.49f, -.49f, -.49f,  	   0.f, 1.f, 0.f,
+
+
+			// Connections
+			.49f, .5f , .5f,	   0.f, 1.f, 0.f,
+			.5f, .5f, .5f,		   0.f, 1.f, 0.f,
+			.5f, .5f, -.5f,		   0.f, 1.f, 0.f,
+			.49f, .5f , .5f,	   0.f, 1.f, 0.f,
+			.49f, .5f, -.5f,	   0.f, 1.f, 0.f,
+			.5f, .5f, -.5f,		   0.f, 1.f, 0.f,
+
+			-.49f, .5f , .5f,	   0.f, 1.f, 0.f,
+			-.5f, .5f, .5f,	 	   0.f, 1.f, 0.f,
+			-.5f, .5f, -.5f, 	   0.f, 1.f, 0.f,
+			-.49f, .5f , .5f,	   0.f, 1.f, 0.f,
+			-.49f, .5f, -.5f,	   0.f, 1.f, 0.f,
+			-.5f, .5f, -.5f, 	   0.f, 1.f, 0.f,
+
+			.49f, .5f, .49f,	   0.f, 1.f, 0.f,
+			.49f, .5f, .5f,		   0.f, 1.f, 0.f,
+			-.49f, .5f, .49f,	   0.f, 1.f, 0.f,
+
+			.49f, .5f, .5f,	   0.f, 1.f, 0.f,
+			-.49f, .5f, .5f,	   0.f, 1.f, 0.f,
+			-.49f, .5f, .49f,	   0.f, 1.f, 0.f,
+
+			.49f, .5f, -.49f,	   0.f, 1.f, 0.f,
+			.49f, .5f, -.5f, 	   0.f, 1.f, 0.f,
+			-.49f, .5f, -.49f,	   0.f, 1.f, 0.f,
+
+			.49f, .5f, -.5f,	   0.f, 1.f, 0.f,
+			-.49f, .5f, -.5f,	   0.f, 1.f, 0.f,
+			-.49f, .5f, -.49f,	   0.f, 1.f, 0.f,
+		};
 
 	InitCamera(camera);
 	cam_dist = 20.f;
@@ -3896,7 +4294,7 @@ int main(int argc, char** argv)
 
 	// Floor = 2
 	index++;
-	glNamedBufferStorage(Buffers[index], 6 * 8 * sizeof(float), floor, 0);
+	glNamedBufferStorage(Buffers[index], floor.size() * sizeof(float), floor.data(), 0);
 	glBindVertexArray(VAOs[index]);
 	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)0);
@@ -3905,7 +4303,7 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(5 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-	verts.push_back(6 * 8);
+	verts.push_back(floor.size());
 
 	for (int i = 0; i < cannonObject.size(); i++) {
 		// Cannon = 3 - 8
@@ -3946,6 +4344,26 @@ int main(int argc, char** argv)
 		verts.push_back(lampObject.at(i).size());
 	}
 
+	index++;
+	glNamedBufferStorage(Buffers[index], num_curve_floats * sizeof(float), curve_vertices, 0);
+	glBindVertexArray(VAOs[index]);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (6 * sizeof(float)), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (6 * sizeof(float)), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	verts.push_back(num_curve_floats);
+	
+	index++;
+	glNamedBufferStorage(Buffers[index], 84 * 6 * sizeof(float), chest, 0);
+	glBindVertexArray(VAOs[index]);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (6 * sizeof(float)), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (6 * sizeof(float)), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	verts.push_back(84 * 6);
+
 	glEnable(GL_DEPTH_TEST);
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -3964,9 +4382,9 @@ int main(int argc, char** argv)
 		model = glm::translate(model, -initSunPos);
 
 		lightPos[0] = glm::vec3(model * glm::vec4(0.f, 0.f, 0.f, -1.f));
-		lightDirection[0] = glm::normalize(glm::vec3(0.f, 1.f, 0.f) - lightPos[0]);
+		lightDirection[0] = glm::normalize(glm::vec3(0.f, 0.f, 0.f) - lightPos[0]);
 
-		if (cannonBallPos > 0) {
+		if (cannonBallPos >= 0) {
 			cannonBallPos += CANNONBALL_SPEED;
 		} if (cannonBallPos >= 100) {
 			cannonBallPos = -1;
@@ -3981,7 +4399,7 @@ int main(int argc, char** argv)
 			if (lightType[lightIndex] == 1 || lightType[lightIndex] == 2) {
 				float near_plane = 5.f; float far_plane = 50.f;
 				lightProjection = glm::perspective(glm::radians(90.f), (float)WIDTH / (float)HEIGHT, near_plane, far_plane);
-				lightView = glm::lookAt(lightPos[lightIndex], lightPos[lightIndex] + lightDirection[lightIndex], glm::vec3(0.0f, 1.0f, 0.0f));
+				lightView = glm::lookAt(lightPos[lightIndex], lightPos[lightIndex] + lightDirection[lightIndex], glm::vec3(0.0f, 0.0f, 0.0f));
 			}
 			// Directional
 			else if (lightType[lightIndex] == 0) {

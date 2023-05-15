@@ -24,9 +24,9 @@
 
 SCamera camera;
 
-#define NUM_BUFFERS 26
-#define NUM_VAOS 26
-#define NUMTEXTURES 7
+#define NUM_BUFFERS 27
+#define NUM_VAOS 27
+#define NUMTEXTURES 9
 
 GLuint Buffers[NUM_BUFFERS];
 GLuint VAOs[NUM_VAOS];
@@ -605,7 +605,6 @@ void drawSky(unsigned int shaderProgram, GLuint skyTex, int index)
 
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::scale(model, glm::vec3(25, 25, 25));
-	//model = glm::rotate(model, (float)glfwGetTime() / 2, glm::vec3(0.f, 1.f, 0.f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 	int modelType = 1;
@@ -622,9 +621,7 @@ void drawFloor(unsigned int shaderProgram, GLuint floorTex, int index, int verts
 	glBindTexture(GL_TEXTURE_2D, floorTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	//model = glm::translate(model, glm::vec3(0, -3, 0));
-
-	model = glm::scale(model, glm::vec3(24.9, 0.01, 24.9));
+	model = glm::scale(model, glm::vec3(25.f, 0.1f, 25.f));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
 	int modelType = 2;
@@ -726,6 +723,18 @@ void drawLamp(unsigned int shaderProgram, int index, int verts)
 	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
 
 	glDrawArrays(GL_TRIANGLES, 0, verts);
+	
+	model = glm::mat4(1.f);
+	model = glm::rotate(model, (float)M_PI / 2, glm::vec3(0.f, 1.f, 0.f));
+	model = glm::translate(model, glm::vec3(-10.f, 3.f, -15.1f));
+	model = glm::rotate(model, (float) M_PI /2, glm::vec3(0.f, -1.f, 0.f));
+	model = glm::scale(model, glm::vec3(.006f, .006f, .006f));
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+	glDrawArrays(GL_TRIANGLES, 0, verts);
+
+
 }
 
 void drawStreet(unsigned int shaderProgram, GLuint streetTex, int index, int verts)
@@ -735,22 +744,16 @@ void drawStreet(unsigned int shaderProgram, GLuint streetTex, int index, int ver
 	glBindTexture(GL_TEXTURE_2D, streetTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	//model = glm::translate(model, glm::vec3(0, -3, 0));
+	model = glm::rotate(model, (float)M_PI / 2, glm::vec3(0.f, 1.f, 0.f));
+	model = glm::translate(model, glm::vec3(-25.f, 0.05f, -15.5f));
 
-	model = glm::scale(model, glm::vec3(25, 0.1, 25));
+	model = glm::scale(model, glm::vec3(50, 1, 10));
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-	int modelType = 2;
+	int modelType = 9;
 	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
 
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-
-	modelType = 5;
-	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
-	model = glm::translate(model, glm::vec3(0, -0.1, 0));
-	model = glm::rotate(model, (float)M_PI, glm::vec3(1.0f, .0f, .0f));
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDrawArrays(GL_TRIANGLES, 0, verts);
 }
 
 void drawChest(unsigned int shaderProgram, int index, int verts) {
@@ -759,7 +762,7 @@ void drawChest(unsigned int shaderProgram, int index, int verts) {
 
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, -1.f, 0.f));
-	model = glm::translate(model, glm::vec3(3.f, .65f, 0.f));
+	model = glm::translate(model, glm::vec3(3.f, .67f, 0.f));
 
 	if (index == 24) {
 		model = glm::scale(model, glm::vec3(2.f, 1.f, 2.5f));
@@ -821,9 +824,27 @@ void drawFillChest(unsigned int shaderProgram, GLuint cannonballTex, int index) 
 
 }
 
+void drawCurb(unsigned int shaderProgram, int index, int verts) {
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glBindVertexArray(VAOs[index]);
+
+	glm::mat4 model = glm::mat4(1.f);
+	model = glm::translate(model, glm::vec3(-20.5f, 0.15f, 0.f));
+	model = glm::rotate(model, (float)M_PI, glm::vec3(1.f, 0.f, 0.f));
+	model = glm::scale(model, glm::vec3(10.f, 0.4f, 50.f));
+
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+	int modelType = 7;
+	glUniform1i(glGetUniformLocation(shaderProgram, "modelType"), modelType);
+
+	glDrawArrays(GL_TRIANGLES, 0, verts);
+
+}
+
 void drawObjects(unsigned int shaderProgram, GLuint* textures, std::vector<int> verts) {
 	drawCannonball(shaderProgram, textures[0], 0);
-	drawSky(shaderProgram, textures[1], 1);
+	drawSky(shaderProgram, (float)glfwGetTime() / 20 < M_PI ? textures[1] : textures[7], 1);
 	drawFloor(shaderProgram, textures[2], 2, verts[2]);
 	drawSun(shaderProgram, textures[3], 0);
 	drawCannon(shaderProgram, textures[4], 3, verts[3]);
@@ -841,6 +862,8 @@ void drawObjects(unsigned int shaderProgram, GLuint* textures, std::vector<int> 
 	drawChest(shaderProgram, 23, verts[23]);
 	drawChest(shaderProgram, 24, verts[24]);
 	drawFillChest(shaderProgram, textures[0], 0);
+	drawStreet(shaderProgram, textures[8], 25, verts[25]);
+	drawCurb(shaderProgram, 24, verts[24]);
 }
 
 void renderWithShadow(unsigned int renderShaderProgram, ShadowStruct shadow[NUM_LIGHTS], glm::mat4 projectedLightSpaceMatrix[], GLuint* textures, std::vector<int> verts)
@@ -4067,6 +4090,8 @@ int main(int argc, char** argv)
 	textures[4] = setup_texture("Assets/14054_Pirate_Ship_Cannon_on_Cart_wheel_diff.bmp", false);
 	textures[5] = setup_texture("Assets/14054_Pirate_Ship_Cannon_on_Cart_cart_diff.bmp", false);
 	textures[6] = setup_texture("Assets/14054_Pirate_Ship_Cannon_on_Cart_barrel_diff.bmp", false);
+	textures[7] = setup_texture("Assets/sky_texture1.bmp", false);
+	textures[8] = setup_texture("Assets/Diffuse.jpg2364a46c-5655-4484-8932-8710fe62144bZoom.bmp", true);
 
 	std::vector<std::vector<float>> cannonObject;
 	objParser("Assets/pirate_cannon.obj", cannonObject, true);
@@ -4204,6 +4229,17 @@ int main(int argc, char** argv)
 			-.49f, .5f, -.49f,	   0.f, 1.f, 0.f,
 		};
 
+
+	float road[] = {
+		1.f, 0.f, 1.f,	5.f , 1.f,	0.f, 1.f, 0.f,
+		1.f, 0.f, 0.f,	5.f, 0.f,	0.f, 1.f, 0.f,
+		0.f, 0.f, 0.f,	0.f, 0.f,	0.f, 1.f, 0.f,
+
+		1.f, 0.f, 1.f,	5.f , 1.f,	0.f, 1.f, 0.f,
+		0.f, 0.f, 0.f,	0.f, 0.f,	0.f, 1.f, 0.f,
+		0.f, 0.f, 1.f,	0.f, 1.f,	0.f, 1.f, 0.f,
+
+	};
 	InitCamera(camera);
 	cam_dist = 20.f;
 	MoveAndOrientCamera(camera, glm::vec3(0, 0, 0), cam_dist, 0.f, 0.f);
@@ -4293,7 +4329,7 @@ int main(int argc, char** argv)
 		glEnableVertexAttribArray(2);
 		verts.push_back(lampObject.at(i).size());
 	}
-
+	// Chest Lid
 	index++;
 	glNamedBufferStorage(Buffers[index], num_curve_floats * sizeof(float), curve_vertices, 0);
 	glBindVertexArray(VAOs[index]);
@@ -4304,6 +4340,7 @@ int main(int argc, char** argv)
 	glEnableVertexAttribArray(2);
 	verts.push_back(num_curve_floats);
 	
+	// Chest body
 	index++;
 	glNamedBufferStorage(Buffers[index], 84 * 6 * sizeof(float), chest, 0);
 	glBindVertexArray(VAOs[index]);
@@ -4313,6 +4350,19 @@ int main(int argc, char** argv)
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (6 * sizeof(float)), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	verts.push_back(84 * 6);
+
+	// Road
+	index++;
+	glNamedBufferStorage(Buffers[index], 6 * 8 * sizeof(float), road, 0);
+	glBindVertexArray(VAOs[index]);
+	glBindBuffer(GL_ARRAY_BUFFER, Buffers[index]);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (8 * sizeof(float)), (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	verts.push_back(6 * 8);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -4332,7 +4382,7 @@ int main(int argc, char** argv)
 		model = glm::translate(model, -initSunPos);
 
 		lightPos[0] = glm::vec3(model * glm::vec4(0.f, 0.f, 0.f, -1.f));
-		lightDirection[0] = glm::normalize(glm::vec3(0.f, 0.f, 0.f) - lightPos[0]);
+		lightDirection[0] = glm::normalize(glm::vec3(0.f, 1.f, 0.f) - lightPos[0]);
 
 		if (cannonBallPos >= 0) {
 			cannonBallPos += CANNONBALL_SPEED;
@@ -4347,9 +4397,9 @@ int main(int argc, char** argv)
 			glm::mat4 lightView;
 			// Spotlight and positional
 			if (lightType[lightIndex] == 1 || lightType[lightIndex] == 2) {
-				float near_plane = 5.f; float far_plane = 50.f;
+				float near_plane = 5.f; float far_plane = 75.f;
 				lightProjection = glm::perspective(glm::radians(90.f), (float)WIDTH / (float)HEIGHT, near_plane, far_plane);
-				lightView = glm::lookAt(lightPos[lightIndex], lightPos[lightIndex] + lightDirection[lightIndex], glm::vec3(0.0f, 0.0f, 0.0f));
+				lightView = glm::lookAt(lightPos[lightIndex], lightPos[lightIndex] + lightDirection[lightIndex], glm::vec3(0.0f, 1.0f, 0.0f));
 			}
 			// Directional
 			else if (lightType[lightIndex] == 0) {

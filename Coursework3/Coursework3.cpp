@@ -39,7 +39,7 @@ int HEIGHT = 768;
 #define SH_MAP_WIDTH 4096
 #define SH_MAP_HEIGHT 4096
 
-#define NUM_LIGHTS 2
+#define NUM_LIGHTS 3
 
 glm::vec3 lightDirection[NUM_LIGHTS];
 glm::vec3 lightPos[NUM_LIGHTS];
@@ -47,7 +47,10 @@ glm::vec3 lightPos[NUM_LIGHTS];
 glm::vec3 initSunPos = glm::vec3(0.f, 0.f, 19.f);
 glm::vec3 sunRotation = glm::vec3(-2.f, 0.f, 0.f);
 
-int lightType[] = { 1 , 2 };
+int lightType[] = { 1 , 2  , 2 };
+float attConst[] = { 1.f, 1.5f, 1.5f };
+float attLin[] = { 0.01f, 0.01f, 0.02f, };
+float attQuad[] = { 0.001f, 0.001f, 0.002f, };
 
 #define RADIUS 1
 #define NUM_SECTORS 30
@@ -58,7 +61,7 @@ int cameraType = 0;
 
 int flashLight = 0;
 
-#define CANNONBALL_SPEED 0.6;
+#define CANNONBALL_SPEED 0.7;
 
 float cannonBallPos = -1;
 
@@ -762,7 +765,7 @@ void drawChest(unsigned int shaderProgram, int index, int verts) {
 
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, -1.f, 0.f));
-	model = glm::translate(model, glm::vec3(3.f, .67f, 0.f));
+	model = glm::translate(model, glm::vec3(3.f, .665f, 0.f));
 
 	if (index == 24) {
 		model = glm::scale(model, glm::vec3(2.f, 1.f, 2.5f));
@@ -912,6 +915,10 @@ void renderWithShadow(unsigned int renderShaderProgram, ShadowStruct shadow[NUM_
 	glUniform3fv(glGetUniformLocation(renderShaderProgram, "lightColour"), 1, glm::value_ptr(glm::vec3(1.f, 1.f, 1.f)));
 	glUniform3f(glGetUniformLocation(renderShaderProgram, "camPos"), camera.Position.x, camera.Position.y, camera.Position.z);
 	glUniform1iv(glGetUniformLocation(renderShaderProgram, "lightType"), NUM_LIGHTS, lightType);
+
+	glUniform1fv(glGetUniformLocation(renderShaderProgram, "attConst"), NUM_LIGHTS, attConst);
+	glUniform1fv(glGetUniformLocation(renderShaderProgram, "attLin"), NUM_LIGHTS, attLin);
+	glUniform1fv(glGetUniformLocation(renderShaderProgram, "attQuad"), NUM_LIGHTS, attQuad);
 
 	glm::mat4 model = glm::mat4(1.f);
 	glUniformMatrix4fv(glGetUniformLocation(renderShaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
@@ -4350,7 +4357,7 @@ int main(int argc, char** argv)
 	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, (6 * sizeof(float)), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);
 	verts.push_back(84 * 6);
-
+	
 	// Road
 	index++;
 	glNamedBufferStorage(Buffers[index], 6 * 8 * sizeof(float), road, 0);
@@ -4373,6 +4380,12 @@ int main(int argc, char** argv)
 	lightModel = glm::translate(lightModel, glm::vec3(0.f, 6.5f, -8.6f));
 	lightPos[1] = glm::vec3(lightModel * glm::vec4(0.f, 0.f, 0.f, 1.f));
 	lightDirection[1] = glm::vec3(-0.05f, -1.f, 0.f);
+	
+	lightModel = glm::mat4(1.f);
+	lightModel = glm::rotate(lightModel, (float)M_PI / 2, glm::vec3(0.f, 1.f, 0.f));
+	lightModel = glm::translate(lightModel, glm::vec3(-10.f, 9.75f, -12.5f));
+	lightPos[2] = glm::vec3(lightModel * glm::vec4(0.f, 0.f, 0.f, 1.f));
+	lightDirection[2] = glm::vec3(0.05f, -1.f, 0.f);
 
 	while (!glfwWindowShouldClose(window))
 	{

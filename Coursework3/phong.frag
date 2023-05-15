@@ -17,14 +17,17 @@ uniform vec3 lightDirection[5];
 uniform vec3 lightColour;
 uniform vec3 lightPos[5];
 uniform int lightType[5];
+uniform float attConst[5];
+uniform float attLin[5];
+uniform float attQuad[5];
 
 uniform vec3 camPos;
 
 uniform int modelType;
 
-float attConst = 1.f;
-float attLin = 0.01;
-float attQuad = 0.001f;
+// float attConst = 1.f;
+// float attLin = 0.01;
+// float attQuad = 0.001f;
 
 float ambient = 0.1f;
 
@@ -115,7 +118,8 @@ float CalculatePositionalIllumination(int lightIndex, float shadow)
 
 
 	float dist = length(lightPos[lightIndex] - FragPosWorldSpace);
-	float attenuation = 1 / (attConst + (attLin * dist) + (attQuad * pow(dist, 2.f)));
+	float attenuation = 1 / (attConst[lightIndex] + (attLin[lightIndex] * dist) + (attQuad[lightIndex] * pow(dist, 2.f)));
+	// float attenuation = 1 / (attConst + (attLin * dist) + (attQuad * pow(dist, 2.f)));
 
 
 	float phong =  (ambient + (shadow * (diffuse + specular))) * attenuation;
@@ -140,7 +144,8 @@ float CalculateSpotIllumination(int lightIndex, float shadow)
 	specular = pow(specular, 128.f);
 
 	float dist = length(lightPos[lightIndex] - FragPosWorldSpace);
-	float attenuation = 1 / (attConst + (attLin * dist) + (attQuad * pow(dist, 2.f)));
+	float attenuation = 1 / (attConst[lightIndex] + (attLin[lightIndex] * dist) + (attQuad[lightIndex] * pow(dist, 2.f)));
+	// float attenuation = 1 / (attConst + (attLin * dist) + (attQuad * pow(dist, 2.f)));
 
 	float cut_off = 15.f;
 	float phi = cos(radians(cut_off));
@@ -184,30 +189,46 @@ void main()
 
 	switch(modelType)
 	{
-	case 0:
+	// Sky
 	case 1:
+		fColour = texture(Texture, tex);
+		break;
+	// Sun
+	case 0:
+	// Cannon Ball
 	case 2:
+	// Floor
 	case 3:
+	// Sun
 	case 4:
+	// Road
+	case 9:
 		fColour = texture(Texture, tex) * vec4(phong * lightColour, 1.f);
 		break;
+	// Tank Body
 	case 5:
 		fColour = vec4(phong * vec3(169.f/255,140.f/255,106.f/255), 1.f);
 		break;
+	// Tank wheels & gun
 	case 6:
 		fColour = vec4(phong * vec3(.3f, .3f, .3f), 1.f);
 		break;
+	// Lamp
 	case 7:
 		fColour = vec4(phong * vec3(.6f, .6f, .6f), 1.f);
 		break;
+	// Chest
 	case 8:
 		fColour = vec4(phong * vec3(74.f/255, 40.f/255, 9.f/255), 1.f);
 		break;
+	// UNLABELLED
 	default:
 		fColour = vec4(phong * vec3(1.f, 0.f, 0.f), 1.f);
 	};
 
 	// fColour = vec4(phong, phong, phong, 1.f);
 	//fColour = vec4(shadow, shadow, shadow, 1.f);
+	// fColour = vec4((nor.x + 1) /2, (nor.y + 1) /2, (nor.z + 1) /2, 1.f);
 	
 }
+ 

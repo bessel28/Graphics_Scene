@@ -146,6 +146,7 @@
     <ClInclude Include="..\..\include\shader.h" />
     <ClInclude Include="..\..\include\shadow.h" />
     <ClInclude Include="..\..\include\Texture.h" />
+    <ClInclude Include="objParser.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="phong.frag" />

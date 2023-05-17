@@ -9,7 +9,7 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform mat4 projectedLightSpaceMatrix[5];
 
-uniform int numLights2;
+uniform int numLights;
 
 out vec2 tex;
 out vec3 nor;
@@ -22,7 +22,7 @@ void main()
 	tex = vTex;
 	nor = mat3(transpose(inverse(model))) * vNor;
 	FragPosWorldSpace = vec3(model * vPos);
-	for (int i = 0; i < numLights2; i++) {
+	for (int i = 0; i < numLights; i++) {
 		FragPosProjectedLightSpace[i] = projectedLightSpaceMatrix[i] * model * vPos;
 	}
 }

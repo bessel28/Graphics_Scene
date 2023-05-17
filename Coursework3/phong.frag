@@ -93,7 +93,7 @@ float CalculateDirectionalIllumination(int lightIndex, float shadow)
 	specular = max(specular, 0);
 	specular = pow(specular, 128.f);
 
-	float phong =  ambient + (shadow * (diffuse + specular));
+	float phong =  (shadow * (diffuse + specular));
 	return phong;
 
 }
@@ -122,7 +122,7 @@ float CalculatePositionalIllumination(int lightIndex, float shadow)
 	// float attenuation = 1 / (attConst + (attLin * dist) + (attQuad * pow(dist, 2.f)));
 
 
-	float phong =  (ambient + (shadow * (diffuse + specular))) * attenuation;
+	float phong =  (shadow * (diffuse + specular)) * attenuation;
 	return phong;
 }
 
@@ -154,7 +154,7 @@ float CalculateSpotIllumination(int lightIndex, float shadow)
 
 	if (theta > phi) 
 	{
-		float phong =  (ambient + (shadow * (diffuse + specular))) * attenuation;
+		float phong =  (shadow * (diffuse + specular)) * attenuation;
 		return phong;
 	}
 	else 
@@ -185,7 +185,7 @@ void main()
 		}
 	}
 
-	phong = min(phong, 1);
+	phong = min(ambient + phong, 1);
 
 	switch(modelType)
 	{
@@ -201,6 +201,8 @@ void main()
 	case 3:
 	// Sun
 	case 4:
+	// Chest
+	case 8:
 	// Road
 	case 9:
 		fColour = texture(Texture, tex) * vec4(phong * lightColour, 1.f);
@@ -217,10 +219,8 @@ void main()
 	case 7:
 		fColour = vec4(phong * vec3(.6f, .6f, .6f), 1.f);
 		break;
-	// Chest
-	case 8:
-		fColour = vec4(phong * vec3(74.f/255, 40.f/255, 9.f/255), 1.f);
-		break;
+		// fColour = vec4(phong * vec3(74.f/255, 40.f/255, 9.f/255), 1.f);
+		// break;
 	// UNLABELLED
 	default:
 		fColour = vec4(phong * vec3(1.f, 0.f, 0.f), 1.f);

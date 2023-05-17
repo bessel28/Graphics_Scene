@@ -56,6 +56,9 @@
     <ClInclude Include="..\..\include\shadow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="objParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="phong.frag">

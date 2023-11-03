@@ -56,7 +56,7 @@
     <ClInclude Include="..\..\include\shadow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="objParser.h">
+    <ClInclude Include="..\..\include\objParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

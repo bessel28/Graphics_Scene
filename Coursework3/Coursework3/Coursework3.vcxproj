@@ -142,11 +142,11 @@
     <ClInclude Include="..\..\include\error.h" />
     <ClInclude Include="..\..\include\file.h" />
     <ClInclude Include="..\..\include\KeyCallback.h" />
+    <ClInclude Include="..\..\include\objParser.h" />
     <ClInclude Include="..\..\include\point.h" />
     <ClInclude Include="..\..\include\shader.h" />
     <ClInclude Include="..\..\include\shadow.h" />
     <ClInclude Include="..\..\include\Texture.h" />
-    <ClInclude Include="objParser.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="phong.frag" />

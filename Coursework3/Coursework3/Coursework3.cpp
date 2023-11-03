@@ -37,8 +37,8 @@ int HEIGHT = 768;
 
 #define SH_MAP_WIDTH 2048
 #define SH_MAP_HEIGHT 2048
-#define SH_MAP_WIDTH 4096
-#define SH_MAP_HEIGHT 4096
+//#define SH_MAP_WIDTH 4096
+//#define SH_MAP_HEIGHT 4096
 
 #define NUM_LIGHTS 3
 
@@ -334,7 +334,7 @@ float* createSphere(bool inverseN)
 	return sphere;
 }
 
-std::vector<float> createCircle() {
+std::vector<float> createCylinder() {
 	// Actually makes a very thin cyl
 	std::vector<float> vertices;
 
@@ -461,12 +461,12 @@ void drawCannonball(unsigned int shaderProgram, GLuint cannonballTex, int index)
 	glBindTexture(GL_TEXTURE_2D, cannonballTex);
 
 	glm::mat4 model = glm::mat4(1.f);
-	model = glm::translate(model, glm::vec3(4.3f, 2.5f, 0.f));
+	model = glm::translate(model, glm::vec3(4.3f, 2.4f, 0.f));
 	model = glm::scale(model, glm::vec3(0.25f, 0.25f, 0.25f));
 
 	// Ball hasn't been fired yet ignore it
 	if (cannonBallPos == -1) {
-		return;
+
 	}
 	// if fired then translate to it's current place
 	else if (cannonBallPos > 1) {
@@ -604,7 +604,7 @@ void drawLamp(unsigned int shaderProgram, int index, int verts)
 	glm::mat4 model = glm::mat4(1.f);
 	model = glm::rotate(model, (float)M_PI / 2, glm::vec3(0.f, 1.f, 0.f));
 	model = glm::translate(model, glm::vec3(0.f, 2.65f, -6.f));
-	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, 1.f, -0.f));
+	model = glm::rotate(model, (float) M_PI/2, glm::vec3(0.f, 1.f, 0.f));
 	model = glm::scale(model, glm::vec3(.006f));
 
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(model));
@@ -736,7 +736,7 @@ void drawCurb(unsigned int shaderProgram, int index, int verts) {
 
 void drawObjects(unsigned int shaderProgram, GLuint* textures, std::vector<int> verts) {
 	drawCannonball(shaderProgram, textures[0], 0); // Draws fired cannonball
-	drawSky(shaderProgram, (float)glfwGetTime() / 20 < M_PI ? textures[1] : textures[7], 1); // Draws the sky invSphere
+	drawSky(shaderProgram, fmod(((float)glfwGetTime() / 20), M_PI * 2) < M_PI ? textures[1] : textures[7], 1); // Draws the sky invSphere
 	drawFloor(shaderProgram, textures[2], 2, verts[2]); // Draws the grass floor cyl
 	drawSun(shaderProgram, textures[3], 0); // Draws the sun
 	drawCannon(shaderProgram, textures[4], 3, verts[3]); // Draws The cannon
@@ -3966,9 +3966,9 @@ int main(int argc, char** argv)
 	float* sphere = createSphere(false);
 	float* invSphere = createSphere(true);
 
-	std::vector<float> floor = createCircle();
+	std::vector<float> floor = createCylinder();
 
-	const char* files[6] = {
+	const char* grassMipmapFiles[6] = {
 	"Assets/grass/grass2_1024.bmp",
 	"Assets/grass/grass2_512.bmp",
 	"Assets/grass/grass2_256.bmp",
@@ -3980,7 +3980,7 @@ int main(int argc, char** argv)
 	GLuint* textures = (GLuint*)calloc(NUMTEXTURES, sizeof(GLuint));
 	textures[0] = setup_texture("Assets/cannonball.bmp", false);
 	textures[1] = setup_texture("Assets/sky_texture2.bmp", false);
-	textures[2] = setup_mipmaps(files, 6, true);
+	textures[2] = setup_mipmaps(grassMipmapFiles, 6, true);
 	textures[3] = setup_texture("Assets/sun.bmp", false);
 	textures[4] = setup_texture("Assets/Cannon/14054_Pirate_Ship_Cannon_on_Cart_wheel_diff.bmp", false);
 	textures[5] = setup_texture("Assets/Cannon/14054_Pirate_Ship_Cannon_on_Cart_cart_diff.bmp", false);

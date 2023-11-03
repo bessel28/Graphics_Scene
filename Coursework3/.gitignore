@@ -70,6 +70,3 @@ Thumbs.db
 *.exe
 *.out
 *.app
-
-
-include/*/*

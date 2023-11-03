@@ -64,16 +64,16 @@ float shadowOnFragment(int lightIndex)
 			shadow += fragDepth > (litDepth + bias) ? 1.0 : 0.0;
 		}
 	}
+	if (fragDepth > 1)
+		shadow = 0.f;
+
+	return shadow / samples;
 
 	//float litDepth = texture(getShadowMap(lightIndex), ss.xy).r;
 
 	// float bias = max(0.01 * (1.0 - dot(Nnor, NtoLight)), 0.001);
 	// shadow = fragDepth > (litDepth + bias) ? 1.0 : 0.0;
-
-	if (fragDepth > 1)
-		shadow = 0.f;
-
-	return shadow / samples;
+	// return shadow;
 }
 
 float CalculateDirectionalIllumination(int lightIndex, float shadow)
